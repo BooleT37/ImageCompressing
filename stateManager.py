@@ -1,5 +1,5 @@
 from tkinter import *
-from constants import *
+from Constants import *
 
 MAIN = "main"
 GRAYSCALE = "grayscale"
@@ -10,47 +10,32 @@ class ButtonGroup:
 	def __init__(self, buttons):
 		self.buttons = buttons
 		
-	def disable(self):
+	def disable(self, side):
 		for i in range(len(self.buttons)):
-			button = self.buttons[i]
+			button = self.buttons[i].left if (side == LEFT_SIDE) else self.buttons[i].right
 			button.configure(state=DISABLED)
-	def enable(self):
+	def enable(self, side):
 		for i in range(len(self.buttons)):
-			self.buttons[i].configure(state=NORMAL)
+			button = self.buttons[i].left if (side == LEFT_SIDE) else self.buttons[i].right
+			button.configure(state=NORMAL)
 				
 
 class StateManager:
-	def __init__(self, app):
-		self.app = app
+	def __init__(self, widgets):
+		self.widgets = widgets
 		self.buttonGroups = {
-			LEFT_SIDE: {
-				'general': ButtonGroup([app.openLeftImageButton, app.saveLeftImageButton]),
-				'bw': ButtonGroup([app.turnBwEwLeftImageButton, app.turnBwCcirLeftImageButton]),
-				'YCbCrChannels': ButtonGroup([app.showYChannelForLeftImageButton, app.showCbChannelForLeftImageButton, app.showCrChannelForLeftImageButton]),
-				'YCbCrConvert': ButtonGroup([app.convertFromYCbCrLeftImageButton]),
-				'compression': ButtonGroup([
-				app.uniformQuantizeRgbLeftImageButton,
-				app.uniformQuantizeYCbCr2LeftImageButton,
-				app.uniformQuantizeYCbCr1LeftImageButton,
-				app.uniformQuantizeYCbCr3LeftImageButton,
-				app.mcQuantizeLeftImageButton,
-				app.subsampleLeftImageButton]),
-				'restore': ButtonGroup([app.restoreLeftImageButton])
-			},
-			RIGHT_SIDE: {
-				'general': ButtonGroup([app.openRightImageButton, app.saveRightImageButton]),
-				'bw': ButtonGroup([app.turnBwEwRightImageButton, app.turnBwCcirRightImageButton]),
-				'YCbCrChannels': ButtonGroup([app.showYChannelForRightImageButton, app.showCbChannelForRightImageButton, app.showCrChannelForRightImageButton]),
-				'YCbCrConvert': ButtonGroup([app.convertFromYCbCrRightImageButton]),
-				'compression': ButtonGroup([
-				app.uniformQuantizeRgbRightImageButton,
-				app.uniformQuantizeYCbCr1RightImageButton,
-				app.uniformQuantizeYCbCr2RightImageButton,
-				app.uniformQuantizeYCbCr3RightImageButton,
-				app.mcQuantizeRightImageButton,
-				app.subsampleRightImageButton]),
-				'restore': ButtonGroup([app.restoreRightImageButton])
-			}
+			'general': ButtonGroup([widgets["openImageButtons"], widgets["saveImageButtons"]]),
+			'bw': ButtonGroup([widgets["turnBWEwButtons"], widgets["turnBwCcirButtons"]]),
+			'YCbCrChannels': ButtonGroup([widgets["showYChannelButtons"], widgets["showCbChannelButtons"], widgets["showCrChannelButtons"]]),
+			'YCbCrConvert': ButtonGroup([widgets["convertFromYCbCrButtons"]]),
+			'compression': ButtonGroup([
+			widgets["uniformQuantizeRgbButtons"],
+			widgets["uniformQuantizeYCbCr1Buttons"],
+			widgets["uniformQuantizeYCbCr2Buttons"],
+			widgets["uniformQuantizeYCbCr3Buttons"],
+			widgets["mcQuantizeButtons"],
+			widgets["subsampleButtons"]]),
+			'restore': ButtonGroup([widgets["restoreImageButtons"]])
 		}
 		self.currentState = {
 			LEFT_SIDE: MAIN,
@@ -68,29 +53,29 @@ class StateManager:
 		elif (state == GRAYSCALE):
 			self.enterGrayscaleState(side)
 		elif (state == CHANNEL_SHOWN):
-			self.enterChannedState(side, channel)
+			self.enterChannelState(side, channel)
 		elif (state == COMPRESSED):
 			self.enterCompressedState(side)
 		self.currentState[side] = state
 		self.currentChannel[side] = channel
 		
 	def enterMainState(self, side):
-		self.buttonGroups[side]['general'].enable()
-		self.buttonGroups[side]['bw'].enable()
-		self.buttonGroups[side]['YCbCrChannels'].enable()
-		self.buttonGroups[side]['YCbCrConvert'].enable()
-		self.buttonGroups[side]['compression'].enable()
-		self.buttonGroups[side]['restore'].disable()
+		self.buttonGroups['general'].enable(side)
+		self.buttonGroups['bw'].enable(side)
+		self.buttonGroups['YCbCrChannels'].enable(side)
+		self.buttonGroups['YCbCrConvert'].enable(side)
+		self.buttonGroups['compression'].enable(side)
+		self.buttonGroups['restore'].disable(side)
 	
 	def enterGrayscaleState(self, side):
-		self.buttonGroups[side]['restore'].enable()
+		self.buttonGroups['restore'].enable(side)
 	
-	def enterChannedState(self, side, channel):
+	def enterChannelState(self, side, channel):
 		if (channel is None):
 			raise Exception("channel is not defined for state change")
-		self.buttonGroups[side]['general'].disable()
-		self.buttonGroups[side]['bw'].disable()
-		self.buttonGroups[side]['YCbCrConvert'].disable()
+		self.buttonGroups['general'].disable(side)
+		self.buttonGroups['bw'].disable(side)
+		self.buttonGroups['YCbCrConvert'].disable(side)
 		
 	def enterCompressedState(self, side):
-		self.buttonGroups[side]['restore'].enable()
+		self.buttonGroups['restore'].enable(side)
