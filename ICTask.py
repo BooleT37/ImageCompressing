@@ -151,7 +151,7 @@ class App:
 		mse = self.psnrCounter.countMse(leftImagePixels, rightImagePixels, n)
 		try:
 			psnr = self.psnrCounter.countPsnr(mse)
-			self.widgets["psnrLabel"].configure(text = "MSE = {}\nPSNR = {}".format(mse, psnr))
+			self.widgets["psnrLabel"].configure(text = "MSE = {:.4f}\nPSNR = {:.4f}".format(mse, psnr))
 		except MseIsZeroException:
 			self.widgets["psnrLabel"].configure(text = "MSE = 0\nPSNR is undefined")
 			
