@@ -2,7 +2,7 @@ from tkinter import *
 import tkinter as tk
 from tkinter import ttk
 
-from Constants import *
+from constants import *
 from functools import partial
 
 class WidgetsManager:
@@ -53,7 +53,7 @@ class WidgetsManager:
 		controlsNotebook = self.widgets["controlsNotebook"] = Notebook(subFrames, padding = 3).pack(side=BOTTOM, fill=Y)
 		#controlPanels = self.widgets["controlPanels"] = DoubleWidget("Frame", subFrames, pady=3, padx=2).pack(side=BOTTOM, fill=Y)
 		self.createImageControlsTabs(controlsNotebook)
-		self.widgets["imageLabels"] = DoubleWidget("Label", subFrames, width=45, height=30, relief=RIDGE).pack()
+		self.widgets["imageLabels"] = DoubleWidget("Label", subFrames, width=55, height=30, relief=RIDGE).pack()
 	
 	def createImageControlsTabs(self, controlsNotebook):
 		grayscaleControlsFrame = DoubleWidget("Frame", None, width = 45, height = 10)
@@ -63,7 +63,6 @@ class WidgetsManager:
 		YCbCrControlsFrame = DoubleWidget("Frame", None, width = 45, height = 10)
 		self.createYCbCrTabControls(YCbCrControlsFrame)
 		controlsNotebook.add(YCbCrControlsFrame, text = "YCbCr")
-		#widgets = self.widgets
 		
 		compressionControlsFrame = DoubleWidget("Frame", None, width = 45, height = 10)
 		self.createCompressionTabControls(compressionControlsFrame)
@@ -72,6 +71,10 @@ class WidgetsManager:
 		subsamplingControlsFrame = DoubleWidget("Frame", None, width = 45, height = 10)
 		self.createSubsamplingTabControls(subsamplingControlsFrame)
 		controlsNotebook.add(subsamplingControlsFrame, text = "Subsampling")
+		
+		dctControlsFrame = DoubleWidget("Frame", None, width = 45, height = 10)
+		self.createDctTabControls(dctControlsFrame)
+		controlsNotebook.add(dctControlsFrame, text = "DCT")
 		
 	def createGrayscaleTabControls(self, frame):
 		DoubleWidget("Label", frame, text="Turn B&W:").pack()
@@ -102,6 +105,9 @@ class WidgetsManager:
 		DoubleWidget("Radiobutton", frame, text="2h1v", variable=self.subsamplingMode, value="2h1v").pack()
 		DoubleWidget("Radiobutton", frame, text="1h2v", variable=self.subsamplingMode, value="1h2v").pack()
 		DoubleWidget("Radiobutton", frame, text="2h2v", variable=self.subsamplingMode, value="2h2v").pack()
+	
+	def createDctTabControls(self, frame):
+		print(1)
 	
 	def createYCbCrButtons(self, frames):
 		widgets = self.widgets

@@ -1,5 +1,5 @@
 from tkinter import *
-from Constants import *
+from constants import *
 
 MAIN = "main"
 GRAYSCALE = "grayscale"

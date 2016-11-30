@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 def bound(byte):
 	return min(255, max(0, byte))
@@ -23,13 +24,31 @@ def yCbCrToB(pixel):
 	
 class RgbToYCbCrConverter:	
 	def rgbToYCbCr(pixels):
-		newPixels = list(map(lambda pixel: (rgbToY(pixel), rgbToCb(pixel), rgbToCr(pixel)), pixels))
+		convertPixel = lambda pixel: (rgbToY(pixel), rgbToCb(pixel), rgbToCr(pixel))
+		
+		if (type(pixels) == list):
+			newPixels = list(map(convertPixel, pixels))
+		elif (type(pixels) == np.ndarray):
+			newPixels = np.vectorize(convertPixel)(pixels)
+		else:
+			raise Exception("Expected type 'list' or 'numpy.ndarray' for convertion, got '{}'".format(type(pixels)))
 		
 		#print("RGB{} -> YCbCr{}".format(pixels[0], newPixels[0]))
 		return newPixels
 	
 	def yCbCrToRgb(pixels):
-		newPixels = list(map(lambda pixel: (bound(pixel[0]), bound(pixel[1]), bound(pixel[2])) ,(map(lambda pixel: (yCbCrToR(pixel), yCbCrToG(pixel), yCbCrToB(pixel)), pixels))))
-		
+		def convertPixel(pixel):
+			newPixel = (bound(pixel[0]), bound(pixel[1]), bound(pixel[2]))
+			newPixel[0] = yCbCrToR(pixel)
+			newPixel[1] = yCbCrToG(pixel)
+			newPixel[2] = yCbCrToB(pixel)
+			return newPixel
+			
+		if (type(pixels) == list):
+			newPixels = list(map(convertPixel, pixels))
+		elif (type(pixels) == np.ndarray):
+			newPixels = np.vectorize(convertPixel)(pixels)
+		else:
+			raise Exception("Expected type 'list' or 'numpy.ndarray' for convertion, got '{}'".format(type(pixels)))
 		#print("YCbCr{} -> RGB{}".format(pixels[0], newPixels[0]))
 		return newPixels

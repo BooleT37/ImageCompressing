@@ -1,5 +1,5 @@
-from RgbToYCbCrConverter import *
-from MedianCutQuantizer import MedianCutQuantize
+from .rgbToYCbCrConverter import RgbToYCbCrConverter
+from .medianCutQuantizer import MedianCutQuantize
 
 METHOD_222 = "method 222"
 METHOD_312 = "method 312"
