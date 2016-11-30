@@ -1,31 +1,25 @@
-import re
-import math
-import numpy as np
-
-from tkinter import *
 from tkinter.filedialog import askopenfilename
 from tkinter.filedialog import asksaveasfilename
 
-import inspect
+import numpy as np
+from PIL import Image as PilImage
+from PIL import ImageTk
 
-from gui.stateManager import *
 from gui import WidgetsManager
-
-from imageProcessing import RgbToYCbCrConverter
-from imageProcessing.imageCompressor import *
+from gui.stateManager import *
 from imageProcessing import ImageSubsampler
-from imageProcessing import Dct
-
-from tools import PsnrCounter
+from imageProcessing.imageCompressor import *
 from tools import MseIsZeroException
-from constants import *
-
-from PIL import Image, ImageTk
+from tools import PsnrCounter
 
 
 class Main:
     def __init__(self, master):
-        self.initializeWidgets(master)
+        self.widgetsManager = widgetsManager = WidgetsManager()
+        widgetsManager.createWidgets(master)
+        self.widgets = self.widgetsManager.widgets
+
+        self.bindButtons()
 
         self.image = {
             LEFT_SIDE: None,
@@ -46,13 +40,6 @@ class Main:
         self.psnrCounter = PsnrCounter()
         self.imageCompressor = ImageCompressor()
         self.ImageSubsampler = ImageSubsampler()
-
-    def initializeWidgets(self, master):
-        self.widgetsManager = widgetsManager = WidgetsManager()
-        widgetsManager.createWidgets(master)
-        self.widgets = self.widgetsManager.widgets
-
-        self.bindButtons()
 
     def bindButtons(self):
         widgets = self.widgets
@@ -77,14 +64,14 @@ class Main:
 
     def getImagePixels(self, side):
         pixels = list(self.image[side].getdata())
-        if (self.image[side].mode == 'L' or self.image[side].mode == '1'):
+        if self.image[side].mode == 'L' or self.image[side].mode == '1':
             pixels = list(map(lambda pixel: (pixel, pixel, pixel), pixels))
         return pixels
 
     def replaceImage(self, side, mode, pixels):
         image = self.image[side]
         label = self.getImageLabel(side)
-        newImage = Image.new(mode, image.size)
+        newImage = PilImage.new(mode, image.size)
         newImage.putdata(pixels)
         photo = ImageTk.PhotoImage(newImage)
         label.configure(image=photo)
@@ -102,7 +89,7 @@ class Main:
             self.loadImage(fname, side)
 
     def loadImage(self, fname, side):
-        self.image[side] = Image.open(fname)
+        self.image[side] = PilImage.open(fname)
         photo = ImageTk.PhotoImage(self.image[side])
         width = 512 if photo.width() > 512 else 0
         height = 512 if photo.height() > 512 else 0
@@ -130,27 +117,28 @@ class Main:
     def countPsnr(self):
         leftImage = self.image[LEFT_SIDE]
         rightImage = self.image[RIGHT_SIDE]
-        if (leftImage is None or rightImage is None):
+        if leftImage is None or rightImage is None:
             return
-        if (leftImage.size != rightImage.size):
+        if leftImage.size != rightImage.size:
             self.widgets["psnrLabel"].configure(text="MSE is undefined\nPSNR is undefined, Image sizes are not equal")
-            return;
+            return
         leftImagePixels = self.getImagePixels(side=LEFT_SIDE)
         rightImagePixels = self.getImagePixels(side=RIGHT_SIDE)
         n = leftImage.size[0] * leftImage.size[1]  # width * height
-        leftImageMode = leftImage.mode
-        rightImageMode = rightImage.mode
 
-        ##print("left image pixels:\n{}".format(leftImagePixels[:30]))
-        # if (leftImageMode == 'L' or leftImageMode == '1'):
-        #	leftImagePixels = list(map((lambda pixel: (pixel, pixel, pixel)), leftImagePixels))
-        ##print("left image pixels:\n{}".format(leftImagePixels[:30]))
+        # leftImageMode = leftImage.mode
+        # rightImageMode = rightImage.mode
+
+        # print("left image pixels:\n{}".format(leftImagePixels[:30]))
+        #  if (leftImageMode == 'L' or leftImageMode == '1'):
+        # 	leftImagePixels = list(map((lambda pixel: (pixel, pixel, pixel)), leftImagePixels))
+        # print("left image pixels:\n{}".format(leftImagePixels[:30]))
         #
+        #  print("right image pixels:\n{}".format(rightImagePixels[:30]))
+        #  if (rightImageMode == 'L' or rightImageMode == '1'):
+        # 	#print("mode is {}, converting...".format(rightImageMode))
+        # 	rightImagePixels = list(map((lambda pixel: (pixel, pixel, pixel)), rightImagePixels))
         # print("right image pixels:\n{}".format(rightImagePixels[:30]))
-        # if (rightImageMode == 'L' or rightImageMode == '1'):
-        #	#print("mode is {}, converting...".format(rightImageMode))
-        #	rightImagePixels = list(map((lambda pixel: (pixel, pixel, pixel)), rightImagePixels))
-        ##print("right image pixels:\n{}".format(rightImagePixels[:30]))
 
         mse = self.psnrCounter.countMse(leftImagePixels, rightImagePixels, n)
         try:
@@ -165,10 +153,12 @@ class Main:
     def turnBWCcir(self, side):
         self.turnBlackAndWhite('ccir', side)
 
-    def equalWeightsMethod(self, pixel):
+    @staticmethod
+    def equalWeightsMethod(pixel):
         return round((pixel[0] + pixel[1] + pixel[2]) / 3)
 
-    def ccirWeightsMethod(self, pixel):
+    @staticmethod
+    def ccirWeightsMethod(pixel):
         return ((77 * pixel[0]) >> 8) + ((150 * pixel[1]) >> 8) + ((29 * pixel[2]) >> 8)
 
     def turnBlackAndWhite(self, mode, side):
@@ -176,9 +166,8 @@ class Main:
         if image.mode == 'L':
             return
         self.originalImage[side] = image  # saving the link to be able to restore image later
-        label = self.getImageLabel(side)
         pixels = list(image.getdata())
-        newPixels = list(map((self.equalWeightsMethod) if mode == 'ew' else (self.ccirWeightsMethod), pixels))
+        newPixels = list(map(self.equalWeightsMethod if mode == 'ew' else self.ccirWeightsMethod, pixels))
 
         self.replaceImage(side, "L", newPixels)
 
@@ -199,11 +188,11 @@ class Main:
         cbButtons = widgets["showCbChannelButtons"]
         crButtons = widgets["showCrChannelButtons"]
 
-        if (self.stateManager.currentState[side] == GRAYSCALE):
+        if self.stateManager.currentState[side] == GRAYSCALE:
             self.restoreImage(side)
         image = self.image[side]
         label = self.getImageLabel(side)
-        if (side == LEFT_SIDE):
+        if side == LEFT_SIDE:
             yButton = yButtons.left
             cbButton = cbButtons.left
             crButton = crButtons.left
@@ -220,8 +209,8 @@ class Main:
             crButton.configure(font="SegoeUI 9 normal")
             button = yButton if channel == 'Y' else cbButton if channel == 'Cb' else crButton
 
-        if (self.stateManager.currentState[side] == CHANNEL_SHOWN):
-            if (self.stateManager.currentChannel[side] == channel):
+        if self.stateManager.currentState[side] == CHANNEL_SHOWN:
+            if self.stateManager.currentChannel[side] == channel:
                 self.stateManager.changeState(state=MAIN, side=side)
                 originalImage = self.originalImage[side]
                 photo = ImageTk.PhotoImage(originalImage)
@@ -289,11 +278,12 @@ class Main:
 
     def subsample(self, side):
         mode = self.widgetsManager.subsamplingMode[0].get() if side == LEFT_SIDE else \
-        self.widgetsManager.subsamplingMode[1].get()
+            self.widgetsManager.subsamplingMode[1].get()
         self.originalImage[side] = self.image[side]
         pixelsArray = self.getImagePixels(side)
-        pixels = np.ndarray((self.image[side].width, self.image[side].height), buffer=np.array(pixelsArray))
-        newPixels = self.ImageSubsampler.SubsampleImage(pixels, mode).ravel()
+        pixels = np.ndarray((self.image[side].width, self.image[side].height), buffer=np.array(pixelsArray), dtype=(int,3))
+        newPixels = self.ImageSubsampler.SubsampleImage(pixels, mode).reshape(-1,3).tolist()
+        newPixels = list(map(lambda pixel: (pixel[0], pixel[1], pixel[2]), newPixels))
         self.replaceImage(side, "RGB", newPixels)
         self.stateManager.changeState(state=COMPRESSED, side=side)
 
