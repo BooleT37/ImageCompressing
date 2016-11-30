@@ -1,3 +1,5 @@
 Jpg_samples/*
 Test_Images/*
+.idea/*
+JPEGsnoop/
 __pycache__/*
