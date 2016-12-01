@@ -105,11 +105,11 @@ class WidgetsManager:
         widgets["uniformQuantizeYCbCr3Buttons"] = DoubleWidget("Button", frame, text="UC YCrCb 321", width=11,
                                                                state=DISABLED).pack()
         widgets["mcQuantizeButtons"] = DoubleWidget("Button", frame, text="Median Cut", width=11,
-                                                    state=DISABLED).pack().pack(pady=5)
+                                                    state=DISABLED).pack(pady=5)
 
     def createSubsamplingTabControls(self, frame):
         self.widgets["subsampleButtons"] = DoubleWidget("Button", frame, text="Subsample", width=11,
-                                                        state=DISABLED).pack().pack(pady=5)
+                                                        state=DISABLED).pack(pady=5)
         DoubleWidget("Label", frame, text="Mode:").pack()
         self.subsamplingMode[0].set("2h1v")
         self.subsamplingMode[1].set("2h1v")
@@ -118,7 +118,8 @@ class WidgetsManager:
         DoubleWidget("Radiobutton", frame, text="2h2v", variable=self.subsamplingMode, value="2h2v").pack()
 
     def createDctTabControls(self, frames):
-        self.widgets["dctLabel"] = DoubleWidget("Label", frames, text="DCT widgets").pack()
+        # self.widgets["dctLabel"] = DoubleWidget("Label", frames, text="DCT widgets").pack()
+        self.widgets["dctButtons"] = DoubleWidget("Button", frames, text="Compress", state=DISABLED).pack()
 
     def createYCbCrButtons(self, frames):
         widgets = self.widgets

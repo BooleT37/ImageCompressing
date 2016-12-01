@@ -2,12 +2,14 @@ from tkinter.filedialog import askopenfilename
 from tkinter.filedialog import asksaveasfilename
 
 import numpy as np
+import pickle
 from PIL import Image as PilImage
 from PIL import ImageTk
 
 from gui import WidgetsManager
 from gui.stateManager import *
 from imageProcessing import ImageSubsampler
+from imageProcessing import Dct
 from imageProcessing.imageCompressor import *
 from tools import MseIsZeroException
 from tools import PsnrCounter
@@ -40,6 +42,7 @@ class Main:
         self.psnrCounter = PsnrCounter()
         self.imageCompressor = ImageCompressor()
         self.ImageSubsampler = ImageSubsampler()
+        self.dct = Dct()
 
     def bindButtons(self):
         widgets = self.widgets
@@ -51,6 +54,7 @@ class Main:
         widgets["showYChannelButtons"].bind(self.showYChannel)
         widgets["showCbChannelButtons"].bind(self.showCbChannel)
         widgets["showCrChannelButtons"].bind(self.showCrChannel)
+        widgets["convertFromYCbCrButtons"].bind(self.convertFromYCbCr)
         widgets["uniformQuantizeRgbButtons"].bind(self.uniformQuantizeRgb)
         widgets["uniformQuantizeYCbCr1Buttons"].bind(self.uniformQuantizeYCbCr1)
         widgets["uniformQuantizeYCbCr2Buttons"].bind(self.uniformQuantizeYCbCr2)
@@ -58,6 +62,7 @@ class Main:
         widgets["mcQuantizeButtons"].bind(self.mcQuantize)
         widgets["subsampleButtons"].bind(self.subsample)
         widgets["restoreImageButtons"].bind(self.restoreImage)
+        widgets["dctButtons"].bind(self.applyDct)
 
     def getImageLabel(self, side):
         return self.widgets["imageLabels"].left if side == LEFT_SIDE else self.widgets["imageLabels"].right
@@ -67,6 +72,15 @@ class Main:
         if self.image[side].mode == 'L' or self.image[side].mode == '1':
             pixels = list(map(lambda pixel: (pixel, pixel, pixel), pixels))
         return pixels
+
+    @staticmethod
+    def listToMatrix(lst, height, width):
+        return np.ndarray((height, width), buffer=np.array(lst), dtype=(int, 3))
+
+    @staticmethod
+    def matrixToList(matrix):
+        lst = matrix.reshape(-1, 3).tolist()
+        return list(map(lambda pixel: (pixel[0], pixel[1], pixel[2]), lst))
 
     def replaceImage(self, side, mode, pixels):
         image = self.image[side]
@@ -233,12 +247,6 @@ class Main:
 
         self.replaceImage(side, "L", newPixels)
 
-    def convertFromYCbCrLeftImage(self):
-        self.convertFromYCbCr(side=LEFT_SIDE)
-
-    def convertFromYCbCrRightImage(self):
-        self.convertFromYCbCr(side=RIGHT_SIDE)
-
     def convertFromYCbCr(self, side):
         newPixels = RgbToYCbCrConverter.yCbCrToRgb(RgbToYCbCrConverter.rgbToYCbCr(self.getImagePixels(side)))
 
@@ -280,15 +288,27 @@ class Main:
         mode = self.widgetsManager.subsamplingMode[0].get() if side == LEFT_SIDE else \
             self.widgetsManager.subsamplingMode[1].get()
         self.originalImage[side] = self.image[side]
-        pixelsArray = self.getImagePixels(side)
-        pixels = np.ndarray((self.image[side].height, self.image[side].width), buffer=np.array(pixelsArray), dtype=(int,3))
-        newPixels = self.ImageSubsampler.SubsampleImage(pixels, mode).reshape(-1,3).tolist()
-        newPixels = list(map(lambda pixel: (pixel[0], pixel[1], pixel[2]), newPixels))
+        pixels = self.listToMatrix(self.getImagePixels(side), self.image[side].height, self.image[side].width)
+        newPixels = self.matrixToList(self.ImageSubsampler.imitateForImage(pixels, mode))
         self.replaceImage(side, "RGB", newPixels)
         self.stateManager.changeState(state=COMPRESSED, side=side)
 
+    def applyDct(self, side):
+        self.originalImage[side] = self.image[side]
+        pixels = self.listToMatrix(self.getImagePixels(side), self.image[side].height, self.image[side].width)
+        jpgObject = self.dct.compressImage(pixels)
+        self.saveJpgDialog(jpgObject)
+        # self.replaceImage(side, "RGB", newPixels)
+        # self.stateManager.changeState(state=COMPRESSED, side=side)
+
+    @staticmethod
+    def saveJpgDialog(jpgObject):
+        fname = asksaveasfilename(filetypes=[("My JPG", "*.myjpg")], initialdir="jpg", defaultextension=".myjpg")
+        if fname:
+            file = open(fname, 'wb+')
+            pickle.dump(jpgObject, file)
+
     def restoreImage(self, side):
-        image = self.image[side]
         originalImage = self.originalImage[side]
         label = self.getImageLabel(side)
         self.image[side] = originalImage

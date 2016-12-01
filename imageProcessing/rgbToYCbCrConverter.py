@@ -1,6 +1,8 @@
 import numpy as np
 import time
 
+DEBUG = False
+
 
 def bound(byte):
     return min(255, max(0, byte))
@@ -33,7 +35,7 @@ def yCbCrToB(pixel):
 class RgbToYCbCrConverter:
     @staticmethod
     def rgbToYCbCr(pixels):
-        start_time = time.time()
+        start_time = time.time() if DEBUG else 0
 
         def convertPixel(pixel):
             return rgbToY(pixel), rgbToCb(pixel), rgbToCr(pixel)
@@ -46,18 +48,16 @@ class RgbToYCbCrConverter:
             newPixels = np.array(list(map(convertPixel, pixels.reshape(-1,3).tolist()))).reshape(shape)
         else:
             raise Exception("Expected type 'list' or 'numpy.ndarray' for conversion, got '{}'".format(type(pixels)))
-
-        print("Converting %d pixels from RGB to YCbCr: %s seconds" % (pixels.size, time.time() - start_time))
+        if DEBUG:
+            print("Converting %d pixels from RGB to YCbCr: %s seconds" % (pixels.size, time.time() - start_time))
         return newPixels
 
     @staticmethod
     def yCbCrToRgb(pixels):
-        start_time = time.time()
+        start_time = time.time() if DEBUG else 0
 
         def convertPixel(pixel):
-            pixel = (bound(pixel[0]), bound(pixel[1]), bound(pixel[2]))
-            newPixel = (yCbCrToR(pixel), yCbCrToG(pixel), yCbCrToB(pixel))
-            return newPixel
+            return bound(yCbCrToR(pixel)), bound(yCbCrToG(pixel)), bound(yCbCrToB(pixel))
 
         if type(pixels) == list:
             newPixels = list(map(convertPixel, pixels))
@@ -67,5 +67,6 @@ class RgbToYCbCrConverter:
         else:
             raise Exception("Expected type 'list' or 'numpy.ndarray' for conversion, got '{}'".format(type(pixels)))
 
-        print("Converting %d pixels from YCbCr to RGB: %s seconds" % (pixels.size, time.time() - start_time))
+        if DEBUG:
+            print("Converting %d pixels from YCbCr to RGB: %s seconds" % (pixels.size, time.time() - start_time))
         return newPixels
