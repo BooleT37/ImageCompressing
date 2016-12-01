@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 
 def bound(byte):
@@ -32,24 +33,27 @@ def yCbCrToB(pixel):
 class RgbToYCbCrConverter:
     @staticmethod
     def rgbToYCbCr(pixels):
+        start_time = time.time()
+
         def convertPixel(pixel):
             return rgbToY(pixel), rgbToCb(pixel), rgbToCr(pixel)
 
         if type(pixels) == list:
             newPixels = list(map(convertPixel, pixels))
         elif type(pixels) == np.ndarray:
-            newPixels = np.zeros(pixels.shape, dtype=np.int32)
-            for i in range(newPixels.shape[0]):
-                for j in range(newPixels.shape[1]):
-                    newPixels[i][j] = convertPixel(pixels[i][j])
+            # newPixels = np.zeros(pixels.shape, dtype=np.int32)
+            shape = pixels.shape
+            newPixels = np.array(list(map(convertPixel, pixels.reshape(-1,3).tolist()))).reshape(shape)
         else:
             raise Exception("Expected type 'list' or 'numpy.ndarray' for conversion, got '{}'".format(type(pixels)))
 
-        # print("RGB{} -> YCbCr{}".format(pixels[0], newPixels[0]))
+        print("Converting %d pixels from RGB to YCbCr: %s seconds" % (pixels.size, time.time() - start_time))
         return newPixels
 
     @staticmethod
     def yCbCrToRgb(pixels):
+        start_time = time.time()
+
         def convertPixel(pixel):
             pixel = (bound(pixel[0]), bound(pixel[1]), bound(pixel[2]))
             newPixel = (yCbCrToR(pixel), yCbCrToG(pixel), yCbCrToB(pixel))
@@ -58,11 +62,10 @@ class RgbToYCbCrConverter:
         if type(pixels) == list:
             newPixels = list(map(convertPixel, pixels))
         elif type(pixels) == np.ndarray:
-            newPixels = np.zeros(pixels.shape, dtype=np.int32)
-            for i in range(newPixels.shape[0]):
-                for j in range(newPixels.shape[1]):
-                    newPixels[i][j] = convertPixel(pixels[i][j])
+            shape = pixels.shape
+            newPixels = np.array(list(map(convertPixel, pixels.reshape(-1, 3).tolist()))).reshape(shape)
         else:
             raise Exception("Expected type 'list' or 'numpy.ndarray' for conversion, got '{}'".format(type(pixels)))
-        # print("YCbCr{} -> RGB{}".format(pixels[0], newPixels[0]))
+
+        print("Converting %d pixels from YCbCr to RGB: %s seconds" % (pixels.size, time.time() - start_time))
         return newPixels

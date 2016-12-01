@@ -281,7 +281,7 @@ class Main:
             self.widgetsManager.subsamplingMode[1].get()
         self.originalImage[side] = self.image[side]
         pixelsArray = self.getImagePixels(side)
-        pixels = np.ndarray((self.image[side].width, self.image[side].height), buffer=np.array(pixelsArray), dtype=(int,3))
+        pixels = np.ndarray((self.image[side].height, self.image[side].width), buffer=np.array(pixelsArray), dtype=(int,3))
         newPixels = self.ImageSubsampler.SubsampleImage(pixels, mode).reshape(-1,3).tolist()
         newPixels = list(map(lambda pixel: (pixel[0], pixel[1], pixel[2]), newPixels))
         self.replaceImage(side, "RGB", newPixels)
