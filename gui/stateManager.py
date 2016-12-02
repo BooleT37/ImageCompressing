@@ -38,7 +38,7 @@ class StateManager:
                 widgets["uniformQuantizeYCbCr3Buttons"],
                 widgets["mcQuantizeButtons"],
                 widgets["subsampleButtons"],
-                widgets["dctButtons"]]),
+                widgets["dctCompressButtons"]]),
             'restore': ButtonGroup([widgets["restoreImageButtons"]])
         }
         self.currentState = {

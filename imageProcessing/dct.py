@@ -53,6 +53,9 @@ class Dct:
         return Jpg(pixels.shape[0], pixels.shape[1], newYLayer.flatten().tolist(), newCbLayer.flatten().tolist(),
                    newCrLayer.flatten().tolist(), subsamplingMode)
 
+    def uncompressImage(self, jpgObject):
+        print(jpgObject)
+
     def dctLayer(self, matrix, quantizeMatrix):
         newMatrix = matrix.copy()
         height = matrix.shape[0]

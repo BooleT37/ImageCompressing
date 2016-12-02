@@ -62,7 +62,7 @@ class Main:
         widgets["mcQuantizeButtons"].bind(self.mcQuantize)
         widgets["subsampleButtons"].bind(self.subsample)
         widgets["restoreImageButtons"].bind(self.restoreImage)
-        widgets["dctButtons"].bind(self.applyDct)
+        widgets["dctCompressButtons"].bind(self.dctCompress)
 
     def getImageLabel(self, side):
         return self.widgets["imageLabels"].left if side == LEFT_SIDE else self.widgets["imageLabels"].right
@@ -293,7 +293,14 @@ class Main:
         self.replaceImage(side, "RGB", newPixels)
         self.stateManager.changeState(state=COMPRESSED, side=side)
 
-    def applyDct(self, side):
+    @staticmethod
+    def saveJpgDialog(jpgObject):
+        fname = asksaveasfilename(filetypes=[("My JPG", "*.myjpg")], initialdir="jpg", defaultextension=".myjpg")
+        if fname:
+            file = open(fname, 'wb+')
+            pickle.dump(jpgObject, file)
+
+    def dctCompress(self, side):
         self.originalImage[side] = self.image[side]
         pixels = self.listToMatrix(self.getImagePixels(side), self.image[side].height, self.image[side].width)
         jpgObject = self.dct.compressImage(pixels)
@@ -301,12 +308,46 @@ class Main:
         # self.replaceImage(side, "RGB", newPixels)
         # self.stateManager.changeState(state=COMPRESSED, side=side)
 
-    @staticmethod
-    def saveJpgDialog(jpgObject):
-        fname = asksaveasfilename(filetypes=[("My JPG", "*.myjpg")], initialdir="jpg", defaultextension=".myjpg")
+    def dctUncompress(self, side):
+        jpgObject = self.openJpgDialog()
+        pixels = self.dct.uncompressImage(jpgObject)
+        self.replaceImage(side, "RGB", pixels)
+        self.stateManager.changeState(state=COMPRESSED, side=side)
+
+    def openJpgDialog(self, side):
+        fname = askopenfilename(filetypes=(("JPEG", "*.jpg;*.jpeg"),
+                                           ("PNG", "*.png"),
+                                           ("BMP", "*.bmp"),
+                                           ("TIFF,", "*.tiff"),
+                                           ("All files", "*.*")), initialdir="Jpg_samples")
         if fname:
-            file = open(fname, 'wb+')
-            pickle.dump(jpgObject, file)
+            pkl_file = open('data.pkl', 'rb')
+            self.showJpgImage(pickle.load(pkl_file), side)
+
+    # def showJpgImage(self, pixels, side):
+    #     imageLabels = self.widgets["imageLabels"]
+    #     imageLabel = imageLabels.left if side == LEFT_SIDE else imageLabels.right
+    #     newImage = PilImage.new("JPG", image.size)
+    #     newImage.putdata(pixels)
+    #     self.image[side] = PilImage.open(fname)
+    #     photo = ImageTk.PhotoImage(self.image[side])
+    #
+    #     imageLabel.configure(image=photo)
+    #     imageLabel.image = photo
+    #
+    #     width = 512 if photo.width() > 512 else 0
+    #     height = 512 if photo.height() > 512 else 0
+    #
+    #     imageLabel.configure(image=photo, width=width, height=height)
+    #     imageLabel.image = photo
+    #     self.countPsnr()
+    #     self.yCbCrData[side] = None
+    #     self.stateManager.changeState(state=MAIN, side=side)
+    #
+    #     newImage = PilImage.new(mode, image.size)
+    #     photo = ImageTk.PhotoImage(newImage)
+    #     self.image[side] = newImage
+    #     self.countPsnr()
 
     def restoreImage(self, side):
         originalImage = self.originalImage[side]
