@@ -64,6 +64,7 @@ class Main:
         widgets["restoreImageButtons"].bind(self.restoreImage)
         widgets["dctCompressButtons"].bind(self.dctCompress)
         widgets["dctUncompressButtons"].bind(self.dctUncompress)
+        self.widgets["dctImitateCompressionButtons"].bind(self.dctImitate)
 
     def getImageLabel(self, side):
         return self.widgets["imageLabels"].left if side == LEFT_SIDE else self.widgets["imageLabels"].right
@@ -99,7 +100,7 @@ class Main:
                                            ("PNG", "*.png"),
                                            ("BMP", "*.bmp"),
                                            ("TIFF,", "*.tiff"),
-                                           ("All files", "*.*")), initialdir="Jpg_samples")
+                                           ("All files", "*.*")), initialdir="./Jpg_samples")
         if fname:
             self.loadImage(fname, side)
 
@@ -306,19 +307,20 @@ class Main:
         pixels = self.listToMatrix(self.getImagePixels(side), self.image[side].height, self.image[side].width)
         jpgObject = self.dct.compressImage(pixels)
 
-        print("jpg object:")
-        print("Y layer:")
-        for i in range(10):
-            start = i * jpgObject.width
-            print(jpgObject.yLayer[start:start + 10])
+        # print("jpg object:")
+        # print("Y layer:")
+        # for i in range(10):
+        #     start = i * jpgObject.width
+        #     print(jpgObject.yLayer[start:start + 10])
         self.saveJpgDialog(jpgObject)
         # self.replaceImage(side, "RGB", newPixels)
         # self.stateManager.changeState(state=COMPRESSED, side=side)
 
     def dctUncompress(self, side):
         jpgObject = self.openJpgDialog(side)
-        matrix = self.dct.uncompressImage(jpgObject)
-        self.showJpgImage(matrix, side)
+        if jpgObject is not None:
+            matrix = self.dct.uncompressImage(jpgObject)
+            self.showJpgImage(matrix, side)
 
     def openJpgDialog(self, side):
         fname = askopenfilename(filetypes=[("My JPG", "*.myjpg")], initialdir="Jpg_samples")
@@ -345,6 +347,14 @@ class Main:
         self.countPsnr()
         self.yCbCrData[side] = None
         self.stateManager.changeState(state=MAIN, side=side)
+
+    def dctImitate(self, side):
+        self.originalImage[side] = self.image[side]
+        pixels = self.listToMatrix(self.getImagePixels(side), self.image[side].height, self.image[side].width)
+        jpgObject = self.dct.compressImage(pixels)
+        matrix = self.dct.uncompressImage(jpgObject)
+        self.showJpgImage(matrix, side)
+        self.stateManager.changeState(state=COMPRESSED, side=side)
 
     def restoreImage(self, side):
         originalImage = self.originalImage[side]
