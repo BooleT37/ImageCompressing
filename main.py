@@ -62,9 +62,9 @@ class Main:
         widgets["mcQuantizeButtons"].bind(self.mcQuantize)
         widgets["subsampleButtons"].bind(self.subsample)
         widgets["restoreImageButtons"].bind(self.restoreImage)
-        widgets["dctCompressButtons"].bind(self.dctCompress)
-        widgets["dctUncompressButtons"].bind(self.dctUncompress)
-        self.widgets["dctImitateCompressionButtons"].bind(self.dctImitate)
+        widgets["jpgCompressButtons"].bind(self.jpgCompress)
+        widgets["jpgUncompressButtons"].bind(self.jpgUncompress)
+        self.widgets["jpgImitateCompressionButtons"].bind(self.dctImitate)
 
     def getImageLabel(self, side):
         return self.widgets["imageLabels"].left if side == LEFT_SIDE else self.widgets["imageLabels"].right
@@ -302,7 +302,7 @@ class Main:
             file = open(fname, 'wb+')
             pickle.dump(jpgObject, file)
 
-    def dctCompress(self, side):
+    def jpgCompress(self, side):
         self.originalImage[side] = self.image[side]
         pixels = self.listToMatrix(self.getImagePixels(side), self.image[side].height, self.image[side].width)
         jpgObject = self.dct.compressImage(pixels)
@@ -316,7 +316,7 @@ class Main:
         # self.replaceImage(side, "RGB", newPixels)
         # self.stateManager.changeState(state=COMPRESSED, side=side)
 
-    def dctUncompress(self, side):
+    def jpgUncompress(self, side):
         jpgObject = self.openJpgDialog(side)
         if jpgObject is not None:
             matrix = self.dct.uncompressImage(jpgObject)

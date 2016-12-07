@@ -75,9 +75,9 @@ class WidgetsManager:
         self.createSubsamplingTabControls(subsamplingControlsFrame)
         controlsNotebook.add(subsamplingControlsFrame, text="Subsampling")
 
-        dctControlsFrame = DoubleWidget("Frame", None, width=45, height=10)
-        self.createDctTabControls(dctControlsFrame)
-        controlsNotebook.add(dctControlsFrame, text="DCT")
+        jpgControlsFrame = DoubleWidget("Frame", None, width=45, height=10)
+        self.createJpgTabControls(jpgControlsFrame)
+        controlsNotebook.add(jpgControlsFrame, text="JPG")
 
     def createGrayscaleTabControls(self, frame):
         DoubleWidget("Label", frame, text="Turn B&W:").pack()
@@ -117,11 +117,15 @@ class WidgetsManager:
         DoubleWidget("Radiobutton", frame, text="1h2v", variable=self.subsamplingMode, value="1h2v").pack()
         DoubleWidget("Radiobutton", frame, text="2h2v", variable=self.subsamplingMode, value="2h2v").pack()
 
-    def createDctTabControls(self, frames):
+    def createJpgTabControls(self, frames):
         # self.widgets["dctLabel"] = DoubleWidget("Label", frames, text="DCT widgets").pack()
-        self.widgets["dctCompressButtons"] = DoubleWidget("Button", frames, text="Save image", state=DISABLED).pack()
-        self.widgets["dctUncompressButtons"] = DoubleWidget("Button", frames, text="Open image").pack()
-        self.widgets["dctImitateCompressionButtons"] = DoubleWidget("Button", frames, text="Imitate", state=DISABLED).pack()
+        mainButtonsFrame = DoubleWidget("Frame", frames).pack()
+        self.createJpgMainButtons(mainButtonsFrame)
+
+    def createJpgMainButtons(self, frames):
+        self.widgets["jpgCompressButtons"] = DoubleWidget("Button", frames, text="Save image", state=DISABLED).pack(side=LEFT)
+        self.widgets["jpgUncompressButtons"] = DoubleWidget("Button", frames, text="Open image").pack(side=LEFT)
+        self.widgets["jpgImitateCompressionButtons"] = DoubleWidget("Button", frames, text="Imitate", state=DISABLED).pack(side=LEFT)
 
     def createYCbCrButtons(self, frames):
         widgets = self.widgets
