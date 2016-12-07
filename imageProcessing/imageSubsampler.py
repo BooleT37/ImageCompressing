@@ -61,24 +61,37 @@ class ImageSubsampler:
         return newRgbPixels
 
     @staticmethod
-    def subsampleLayer(matrix, mode):
+    def getShapeFromMode(shape, mode):
+        height = shape[0]
+        width = shape[1]
+        halfHeight = int(math.ceil(height / 2))
+        halfWidth = int(math.ceil(width / 2))
+        if mode == "2h1v":
+            return height, halfWidth
+        if mode == "1h2v":
+            return halfHeight, width
+        if mode == "2h2v":
+            return halfHeight, halfWidth
+        raise ImageSubsamplerException(
+            "Subsampling mode should be \"2h1v\", \"1h2v\" or \"2h2v\", \"{}\" given".format(mode))
+
+    def subsampleLayer(self, matrix, mode):
         height = matrix.shape[0]
         width = matrix.shape[1]
 
         halfHeight = int(math.ceil(height / 2))
         halfWidth = int(math.ceil(width / 2))
+
+        newMatrix = np.ndarray(self.getShapeFromMode(matrix.shape, mode), matrix.dtype)
         if mode == "2h1v":
-            newMatrix = np.ndarray((height, halfWidth), matrix.dtype)
             for i in range(0, height):
                 for j in range(0, halfWidth):
                     newMatrix[i][j] = matrix[i][j * 2]
         elif mode == "1h2v":
-            newMatrix = np.ndarray((halfHeight, width), matrix.dtype)
             for i in range(0, halfHeight):
                 for j in range(0, width):
                     newMatrix[i][j] = matrix[i * 2][j]
         elif mode == "2h2v":
-            newMatrix = np.ndarray((halfHeight, halfWidth), matrix.dtype)
             for i in range(0, halfHeight):
                 for j in range(0, halfWidth):
                     newMatrix[i][j] = matrix[i * 2][j * 2]

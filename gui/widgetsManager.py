@@ -119,8 +119,8 @@ class WidgetsManager:
 
     def createDctTabControls(self, frames):
         # self.widgets["dctLabel"] = DoubleWidget("Label", frames, text="DCT widgets").pack()
-        self.widgets["dctCompressButtons"] = DoubleWidget("Button", frames, text="Compress", state=DISABLED).pack()
-        self.widgets["dctUncompressButtons"] = DoubleWidget("Button", frames, text="Compress", state=DISABLED).pack()
+        self.widgets["dctCompressButtons"] = DoubleWidget("Button", frames, text="Save image", state=DISABLED).pack()
+        self.widgets["dctUncompressButtons"] = DoubleWidget("Button", frames, text="Open image").pack()
 
     def createYCbCrButtons(self, frames):
         widgets = self.widgets

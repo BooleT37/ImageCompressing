@@ -6,10 +6,12 @@
 
 
 class Jpg:
-    def __init__(self, width, height, yLayer, cbLayer, crLayer, subsamplingMode):
-        self.width = width
+    def __init__(self, height, width, yLayer, cbLayer, crLayer, subsamplingMode, quantizeMatrixY, quantizeMatrixCrCb):
         self.height = height
+        self.width = width
         self.yLayer = yLayer
         self.cbLayer = cbLayer
         self.crLayer = crLayer
         self.subsamplingMode = subsamplingMode
+        self.quantizeMatrixY = quantizeMatrixY
+        self.quantizeMatrixCrCb = quantizeMatrixCrCb
