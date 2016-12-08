@@ -72,10 +72,14 @@ class ImageSubsampler:
             return halfHeight, width
         if mode == "2h2v":
             return halfHeight, halfWidth
+        if mode == "no_subsampling":
+            return height, width
         raise ImageSubsamplerException(
-            "Subsampling mode should be \"2h1v\", \"1h2v\" or \"2h2v\", \"{}\" given".format(mode))
+            "Subsampling mode should be \"2h1v\", \"1h2v\", \"2h2v\" or \"no_subsampling\" \"{}\" given".format(mode))
 
     def subsampleLayer(self, matrix, mode):
+        if mode == "no_subsampling":
+            return matrix
         height = matrix.shape[0]
         width = matrix.shape[1]
 
@@ -97,11 +101,13 @@ class ImageSubsampler:
                     newMatrix[i][j] = matrix[i * 2][j * 2]
         else:
             raise ImageSubsamplerException(
-                "Subsampling mode should be \"2h1v\", \"1h2v\" or \"2h2v\", \"{}\" given".format(mode))
+                "Subsampling mode should be \"2h1v\", \"1h2v\", \"2h2v\" or \"no_subsampling\" \"{}\" given".format(mode))
         return newMatrix
 
     @staticmethod
     def unSubsampleLayer(matrix, mode, oddHeight=False, oddWidth=False):
+        if mode == "no_subsampling":
+            return matrix
         height = matrix.shape[0]
         width = matrix.shape[1]
 
@@ -139,7 +145,7 @@ class ImageSubsampler:
                         newMatrix[i * 2 + 1][j * 2 + 1] = matrix[i][j]
         else:
             raise ImageSubsamplerException(
-                "Subsampling mode should be \"2h1v\", \"1h2v\" or \"2h2v\", \"{}\" given".format(mode))
+                "Subsampling mode should be \"2h1v\", \"1h2v\", \"2h2v\" or \"no_subsampling\" \"{}\" given".format(mode))
         return newMatrix
 
     def imitateForLayer(self, matrix, mode):

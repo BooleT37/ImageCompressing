@@ -9,6 +9,12 @@ from functools import partial
 class WidgetsManager:
     def __init__(self):
         self.subsamplingMode = (StringVar(), StringVar())
+        self.subsamplingModeForJpg = (StringVar(), StringVar())
+        self.quantizingMode = (StringVar(), StringVar())
+        self.qntNValue = (StringVar(), StringVar())
+        self.qntAlphaValue = (StringVar(), StringVar())
+        self.qntGammaValue = (StringVar(), StringVar())
+        self.qntQValue = (StringVar(), StringVar())
         self.widgets = {}
 
     def createWidgets(self, root):
@@ -122,10 +128,121 @@ class WidgetsManager:
         mainButtonsFrame = DoubleWidget("Frame", frames).pack()
         self.createJpgMainButtons(mainButtonsFrame)
 
+        optionsFrame = DoubleWidget("Frame", frames).pack()
+        self.createJpgOptionsWidgets(optionsFrame)
+
     def createJpgMainButtons(self, frames):
-        self.widgets["jpgCompressButtons"] = DoubleWidget("Button", frames, text="Save image", state=DISABLED).pack(side=LEFT)
-        self.widgets["jpgUncompressButtons"] = DoubleWidget("Button", frames, text="Open image").pack(side=LEFT)
-        self.widgets["jpgImitateCompressionButtons"] = DoubleWidget("Button", frames, text="Imitate", state=DISABLED).pack(side=LEFT)
+        self.widgets["jpgCompressButtons"] = DoubleWidget("Button", frames, text="Save image", state=DISABLED) \
+            .pack(side=LEFT)
+        self.widgets["jpgUncompressButtons"] = DoubleWidget("Button", frames, text="Open image") \
+            .pack(side=LEFT)
+        self.widgets["jpgImitateCompressionButtons"] = DoubleWidget("Button", frames, text="Imitate", state=DISABLED) \
+            .pack(side=LEFT)
+
+    def createJpgOptionsWidgets(self, frames):
+        subsamplingFrames = DoubleWidget("Frame", frames, relief=RIDGE, borderwidth=2).pack(side=LEFT, anchor="nw")
+        self.createJpgSubsamplingWidgets(subsamplingFrames)
+        quantizingFrames = DoubleWidget("Frame", frames, relief=RIDGE, borderwidth=2).pack(side=LEFT, anchor="nw")
+        self.createJpgQuantizingWidgets(quantizingFrames)
+
+    def createJpgSubsamplingWidgets(self, frames):
+        self.subsamplingModeForJpg[0].set("2h2v")
+        self.subsamplingModeForJpg[1].set("2h2v")
+        DoubleWidget("Label", frames, text="Subsampling mode:").pack(anchor="nw")
+        DoubleWidget("Radiobutton", frames, text="2h2v", variable=self.subsamplingModeForJpg, value="2h2v").pack(
+            anchor="nw")
+        DoubleWidget("Radiobutton", frames, text="1h2v", variable=self.subsamplingModeForJpg, value="1h2v").pack(
+            anchor="nw")
+        DoubleWidget("Radiobutton", frames, text="2h1v", variable=self.subsamplingModeForJpg, value="2h1v").pack(
+            anchor="nw")
+        DoubleWidget("Radiobutton", frames, text="No subsampling", variable=self.subsamplingModeForJpg,
+                     value="no_subsampling").pack(anchor="nw")
+
+    def createJpgQuantizingWidgets(self, frames):
+        self.quantizingMode[0].set("qfactor")
+        self.quantizingMode[1].set("qfactor")
+        DoubleWidget("Label", frames, text="Quantizing mode:").pack(anchor="nw")
+        qntModeFrame1 = DoubleWidget("Frame", frames).pack(anchor="nw")
+        DoubleWidget("Radiobutton", qntModeFrame1, text="First N,", variable=self.quantizingMode, value="firstn").pack(
+            side=LEFT)
+        DoubleWidget("Label", qntModeFrame1, text="N = ").pack(side=LEFT)
+
+        nEntry = DoubleWidget("Entry", qntModeFrame1, textvariable=self.qntNValue, validate="all",
+                              width=2, state=DISABLED).pack(side=LEFT)
+        self.configureEntryValidator(nEntry, self.qntNValue, 0, 64, "64")
+
+        DoubleWidget("Radiobutton", frames, text="Custom matrix", variable=self.quantizingMode, value="custom").pack(
+            anchor="nw")
+        qntModeFrame2 = DoubleWidget("Frame", frames).pack(anchor="nw")
+
+        DoubleWidget("Label", qntModeFrame2, text="α = ").pack(side=LEFT)
+        alphaEntry = DoubleWidget("Entry", qntModeFrame2, textvariable=self.qntAlphaValue, validate="all",
+                                  width=2, state=DISABLED).pack(side=LEFT)
+        self.configureEntryValidator(alphaEntry, self.qntAlphaValue, 0, 10, "3")
+
+        DoubleWidget("Label", qntModeFrame2, text="γ = ").pack(side=LEFT)
+        gammaEntry = DoubleWidget("Entry", qntModeFrame2, textvariable=self.qntGammaValue,
+                                  validate="all", width=2, state=DISABLED).pack(side=LEFT)
+        self.configureEntryValidator(gammaEntry, self.qntGammaValue, 0, 10, "2")
+
+        DoubleWidget("Radiobutton", frames, text="Quality factor", variable=self.quantizingMode, value="qfactor").pack(
+            anchor="nw")
+
+        qntModeFrame3 = DoubleWidget("Frame", frames).pack(anchor="nw")
+        DoubleWidget("Label", qntModeFrame3, text="Q = ").pack(side=LEFT)
+        self.qntQValue[0].set("50")
+        self.qntQValue[1].set("50")
+
+        qEntry = DoubleWidget("Entry", qntModeFrame3, textvariable=self.qntQValue,
+                              validate="all", width=2).pack(side=LEFT)
+        self.configureEntryValidator(qEntry, self.qntQValue, 0, 100, "50")
+
+        def onQuantizingModeChange(*args):
+            value = args[0].get()
+            if value == "firstn":
+                nEntry.configure(state=NORMAL)
+                alphaEntry.configure(state=DISABLED)
+                gammaEntry.configure(state=DISABLED)
+                qEntry.configure(state=DISABLED)
+            elif value == "custom":
+                nEntry.configure(state=DISABLED)
+                alphaEntry.configure(state=NORMAL)
+                gammaEntry.configure(state=NORMAL)
+                qEntry.configure(state=DISABLED)
+            elif value == "qfactor":
+                nEntry.configure(state=DISABLED)
+                alphaEntry.configure(state=DISABLED)
+                gammaEntry.configure(state=DISABLED)
+                qEntry.configure(state=NORMAL)
+
+        self.quantizingMode[0].trace("w", partial(onQuantizingModeChange, self.quantizingMode[0]))
+        self.quantizingMode[1].trace("w", partial(onQuantizingModeChange, self.quantizingMode[1]))
+
+
+    @staticmethod
+    def configureEntryValidator(entry, variable, startValue, endValue, defaultValue):
+        def validateEntry(_, strVal, startVal, endVal):
+            startVal = int(startVal)
+            endVal = int(endVal)
+            if strVal == "":
+                return True
+            try:
+                intVal = int(strVal)
+            except ValueError:
+                return False
+            if startVal <= intVal <= endVal:
+                return True
+            return False
+
+        validator1 = entry.left.register(validateEntry)
+        validator2 = entry.right.register(validateEntry)
+
+        entry.left.configure(validatecommand=(validator1, '%P', '%P', startValue, endValue))
+        entry.right.configure(validatecommand=(validator2, '%P', '%P', startValue, endValue))
+
+        variable[0].set(defaultValue)
+        variable[1].set(defaultValue)
+
 
     def createYCbCrButtons(self, frames):
         widgets = self.widgets

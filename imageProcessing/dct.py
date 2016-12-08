@@ -2,7 +2,7 @@ import math
 
 from .rgbToYCbCrConverter import RgbToYCbCrConverter
 from .imageSubsampler import ImageSubsampler, ImageSubsamplerException
-from .quantizeMatrices import *
+from .quantizeMatrices import QuantizeMatrices
 from .model.jpg import Jpg
 
 import numpy as np
@@ -24,8 +24,8 @@ class Dct:
         self.subsampler = ImageSubsampler()
 
     def compressImage(self, pixels, subsamplingMode="2h2v"):
-        yMatrix = DEFAULT_Y_MATRIX
-        crcbMatrix = DEFAULT_CRCB_MATRIX
+        yMatrix = QuantizeMatrices.DEFAULT_Y_MATRIX
+        crcbMatrix = QuantizeMatrices.DEFAULT_CRCB_MATRIX
 
         # print("RGB pixels: ")
         # print(pixels[0:10,0:10])
