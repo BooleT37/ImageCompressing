@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class QuantizeMatrices:
     DEFAULT_Y_MATRIX = [
         [16, 11, 10, 16, 24, 40, 51, 61],
@@ -19,3 +22,23 @@ class QuantizeMatrices:
         [99, 99, 99, 99, 99, 99, 99, 99],
         [99, 99, 99, 99, 99, 99, 99, 99]
     ]
+
+    @staticmethod
+    def getCustom(alpha, gamma):
+        matrix = np.zeros(64, dtype=int).reshape(8, 8)
+        for i in range(8):
+            for j in range(8):
+                matrix[i, j] = int(alpha * (1 + gamma * (i + j + 2)))
+        return matrix
+
+    def getForQualityFactor(self, q, layer):
+        defaultMatrix = self.DEFAULT_Y_MATRIX if layer == "Y" else self.DEFAULT_CRCB_MATRIX
+        s = 5000 / q if q < 50 else 200 - 2 * q
+
+        def changeQuality(value):
+            newVal = int((s * value + 50) / 100)
+            return 1 if newVal == 0 else newVal
+
+        changeQualityVector = np.vectorize(changeQuality)
+
+        return changeQualityVector(defaultMatrix)
