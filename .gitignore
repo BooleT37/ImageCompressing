@@ -3,3 +3,4 @@ Test_Images/*
 .idea/*
 JPEGsnoop/
 __pycache__/*
+*.pyc
