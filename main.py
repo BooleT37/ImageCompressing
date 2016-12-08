@@ -64,7 +64,7 @@ class Main:
         widgets["restoreImageButtons"].bind(self.restoreImage)
         widgets["jpgCompressButtons"].bind(self.jpgCompress)
         widgets["jpgUncompressButtons"].bind(self.jpgUncompress)
-        self.widgets["jpgImitateCompressionButtons"].bind(self.dctImitate)
+        widgets["jpgImitateCompressionButtons"].bind(self.dctImitate)
 
     def getImageLabel(self, side):
         return self.widgets["imageLabels"].left if side == LEFT_SIDE else self.widgets["imageLabels"].right
@@ -302,10 +302,27 @@ class Main:
             file = open(fname, 'wb+')
             pickle.dump(jpgObject, file)
 
+    def getJpgOptions(self, side):
+        def convertToInt(strVal):
+            if strVal == "":
+                return 0
+            return int(strVal)
+
+        sideIndex = 0 if side == LEFT_SIDE else 1
+        return {
+            "subsamplingMode": self.widgetsManager.subsamplingModeForJpg[sideIndex].get(),
+            "quantizingMode": self.widgetsManager.quantizingMode[sideIndex].get(),
+            "n": convertToInt(self.widgetsManager.qntNValue[sideIndex].get()),
+            "alpha": convertToInt(self.widgetsManager.qntAlphaValue[sideIndex].get()),
+            "gamma": convertToInt(self.widgetsManager.qntGammaValue[sideIndex].get()),
+            "q": convertToInt(self.widgetsManager.qntQValue[sideIndex].get()),
+        }
+
     def jpgCompress(self, side):
         self.originalImage[side] = self.image[side]
         pixels = self.listToMatrix(self.getImagePixels(side), self.image[side].height, self.image[side].width)
-        jpgObject = self.dct.compressImage(pixels)
+
+        jpgObject = self.dct.compressImage(pixels, self.getJpgOptions(side))
 
         # print("jpg object:")
         # print("Y layer:")
@@ -322,7 +339,8 @@ class Main:
             matrix = self.dct.uncompressImage(jpgObject)
             self.showJpgImage(matrix, side)
 
-    def openJpgDialog(self, side):
+    @staticmethod
+    def openJpgDialog(side):
         fname = askopenfilename(filetypes=[("My JPG", "*.myjpg")], initialdir="Jpg_samples")
         if fname:
             pkl_file = open(fname, 'rb')
@@ -344,6 +362,7 @@ class Main:
         imageLabel = imageLabels.left if side == LEFT_SIDE else imageLabels.right
         imageLabel.configure(image=photo, width=width, height=height)
         imageLabel.image = photo
+        self.image[side] = newImage
         self.countPsnr()
         self.yCbCrData[side] = None
         self.stateManager.changeState(state=MAIN, side=side)
@@ -351,7 +370,7 @@ class Main:
     def dctImitate(self, side):
         self.originalImage[side] = self.image[side]
         pixels = self.listToMatrix(self.getImagePixels(side), self.image[side].height, self.image[side].width)
-        jpgObject = self.dct.compressImage(pixels)
+        jpgObject = self.dct.compressImage(pixels, self.getJpgOptions(side))
         matrix = self.dct.uncompressImage(jpgObject)
         self.showJpgImage(matrix, side)
         self.stateManager.changeState(state=COMPRESSED, side=side)

@@ -22,6 +22,7 @@ class QuantizeMatrices:
         [99, 99, 99, 99, 99, 99, 99, 99],
         [99, 99, 99, 99, 99, 99, 99, 99]
     ]
+    NO_COMPRESSION = np.ones(64, dtype=int).reshape(8, 8)
 
     @staticmethod
     def getCustom(alpha, gamma):

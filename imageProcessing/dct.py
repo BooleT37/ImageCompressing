@@ -22,10 +22,37 @@ class Dct:
         self.MT = self.M.transpose()
 
         self.subsampler = ImageSubsampler()
+        self.quantizeMatrices = QuantizeMatrices()
 
-    def compressImage(self, pixels, subsamplingMode="2h2v"):
-        yMatrix = QuantizeMatrices.DEFAULT_Y_MATRIX
-        crcbMatrix = QuantizeMatrices.DEFAULT_CRCB_MATRIX
+    def compressImage(self, pixels, options):
+        quantizingMode = options["quantizingMode"]
+        subsamplingMode = options["subsamplingMode"]
+
+        if quantizingMode == "firstn":
+            yLayerQuantizeOptions = {
+                "quantizeMatrix": self.quantizeMatrices.NO_COMPRESSION,
+                "n": options["n"]
+            }
+            crCbLayerQuantizeOptions = {
+                "quantizeMatrix": self.quantizeMatrices.NO_COMPRESSION,
+                "n": options["n"]
+            }
+        elif quantizingMode == "custom":
+            yLayerQuantizeOptions = {
+                "quantizeMatrix": self.quantizeMatrices.getCustom(options["alpha"], options["gamma"])
+            }
+            crCbLayerQuantizeOptions = {
+                "quantizeMatrix": self.quantizeMatrices.getCustom(options["alpha"], options["gamma"])
+            }
+        elif quantizingMode == "qfactor":
+            yLayerQuantizeOptions = {
+                "quantizeMatrix": self.quantizeMatrices.getForQualityFactor(options["q"], "Y")
+            }
+            crCbLayerQuantizeOptions = {
+                "quantizeMatrix": self.quantizeMatrices.getForQualityFactor(options["q"], "CrCb")
+            }
+        else:
+            raise Exception("quantizingMode has to be 'firstn', 'custom' or 'qfactor', {} given".format(quantizingMode))
 
         # print("RGB pixels: ")
         # print(pixels[0:10,0:10])
@@ -53,9 +80,9 @@ class Dct:
         # print(subsampledCrLayer[0:10, 0:10])
 
         # DCT and quantizing
-        newYLayer = self.dctLayer(yLayer, yMatrix)
-        newCbLayer = self.dctLayer(subsampledCbLayer, crcbMatrix)
-        newCrLayer = self.dctLayer(subsampledCrLayer, crcbMatrix)
+        newYLayer = self.dctLayer(yLayer, quantizingMode, yLayerQuantizeOptions)
+        newCbLayer = self.dctLayer(subsampledCbLayer, quantizingMode, crCbLayerQuantizeOptions)
+        newCrLayer = self.dctLayer(subsampledCrLayer, quantizingMode, crCbLayerQuantizeOptions)
 
         # print("Y layer after DCT:")
         # print(newYLayer[0:10, 0:10])
@@ -66,10 +93,10 @@ class Dct:
 
         return Jpg(pixels.shape[0], pixels.shape[1], newYLayer.flatten().tolist(),
                    newCbLayer.flatten().tolist(), newCrLayer.flatten().tolist(), subsamplingMode,
-                   yMatrix, crcbMatrix)
+                   quantizingMode, yLayerQuantizeOptions["quantizeMatrix"], crCbLayerQuantizeOptions["quantizeMatrix"])
 
     @staticmethod
-    def processForEveryBlock(matrix, function, functionArgs):
+    def processForEveryBlock(matrix, function, functionArgs, fillGapsWithZeros=False):
         newMatrix = matrix.copy()
         height = matrix.shape[0]
         width = matrix.shape[1]
@@ -78,11 +105,17 @@ class Dct:
                 block = newMatrix[i:i + 8, j:j + 8]
                 blockShape = block.shape
                 if block.shape[0] < 8:
-                    lastColumn = block[-1]
+                    if fillGapsWithZeros:
+                        lastColumn = np.zeros(block.shape[1], dtype=int)
+                    else:
+                        lastColumn = block[-1]
                     while block.shape[0] < 8:
                         block = np.concatenate((block, [lastColumn]))
                 if block.shape[1] < 8:
-                    lastRow = block.transpose()[-1].reshape(-1, 1)
+                    if fillGapsWithZeros:
+                        lastRow = np.zeros(block.shape[0], dtype=int).transpose().reshape(-1, 1)
+                    else:
+                        lastRow = block.transpose()[-1].reshape(-1, 1)
                     while block.shape[1] < 8:
                         block = np.hstack((block, lastRow))
 
@@ -93,19 +126,32 @@ class Dct:
                 newMatrix[i:i + 8, j:j + 8] = block
         return newMatrix
 
-    def dctAndQuantize(self, block, quantizeMatrix):
+    def dctAndQuantize(self, block, quantizingMode, quantizeOptions):
         block = self.dctBlock(block)
-        block = self.quantizeBlock(block, quantizeMatrix)
+        block = self.quantizeBlock(block, quantizingMode, quantizeOptions)
         return block
 
-    def dctLayer(self, matrix, quantizeMatrix):
-        return self.processForEveryBlock(matrix, self.dctAndQuantize, [quantizeMatrix])
+    def dctLayer(self, matrix, quantizingMode, quantizeOptions):
+        return self.processForEveryBlock(matrix, self.dctAndQuantize, [quantizingMode, quantizeOptions])
 
     def dctBlock(self, block):
-        return np.dot(np.dot(self.M, block), self.MT)
+        newBlock = np.dot(np.dot(self.M, block), self.MT)
+        # newBlock[0, 0] -= 1024
+        return newBlock
 
     @staticmethod
-    def quantizeBlock(block, quantizeMatrix):
+    def quantizeBlock(block, quantizingMode, options):
+        if quantizingMode == "firstn":
+            newBlock = block.copy()
+            indexes = np.argsort(block)
+            indexes[:] = indexes[::-1]  # reversing sort
+            for i in range(63, options["n"], -1):
+                newBlock[int(i / 8), i % 8] = 0
+            return newBlock
+        if quantizingMode != "custom" and quantizingMode != "qfactor":
+            raise Exception("quantizingMode has to be 'firstn', 'custom' or 'qfactor', {} given".format(quantizingMode))
+
+        quantizeMatrix = options["quantizeMatrix"]
         divide = np.vectorize(lambda a, b: int(a / b))
         return divide(block, np.array(quantizeMatrix).reshape(8,8))
 
@@ -174,10 +220,12 @@ class Dct:
         return block
 
     def unDctLayer(self, matrix, quantizeMatrix):
-        return self.processForEveryBlock(matrix, self.unDctAndQuantize, [quantizeMatrix])
+        return self.processForEveryBlock(matrix, self.unDctAndQuantize, [quantizeMatrix], True)
 
     def unDctBlock(self, block):
-        return np.dot(np.dot(self.MT, block), self.M)
+        newBlock = np.dot(np.dot(self.MT, block), self.M)
+        #newBlock[0, 0] += 1024
+        return newBlock
 
     @staticmethod
     def unquantizeBlock(block, quantizeMatrix):
